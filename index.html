@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard de auditoría de sanciones</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef1f5;--card:#fff;--ink:#14213d;--mut:#5b6679;--line:#d9dee7;--inv:#3a5a98;--san:#1f9d8a;--bad:#d64545;--warn:#e0a21b;--ok:#1f9d8a;--in:#f7f9fc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--card:#17202f;--ink:#e8edf6;--mut:#9aa6bb;--line:#2a3548;--inv:#7b9be0;--san:#37c4ae;--bad:#ff7a7a;--warn:#f0b840;--ok:#37c4ae;--in:#0e1522}}
+:root[data-theme="dark"]{--bg:#0e1522;--card:#17202f;--ink:#e8edf6;--mut:#9aa6bb;--line:#2a3548;--inv:#7b9be0;--san:#37c4ae;--bad:#ff7a7a;--warn:#f0b840;--ok:#37c4ae;--in:#0e1522}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mut);margin:0 0 16px}
+h2{font-size:16px;margin:0 0 4px}
+.note{color:var(--mut);font-size:13px;margin:0 0 12px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px}
+.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.k b{display:block;font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums}
+.k span{color:var(--mut);font-size:13px}
+.k small{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mut)}
+.dn{color:var(--ok)!important}.up{color:var(--bad)!important}
+.row{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;gap:8px;margin:7px 0;font-size:13px}
+.row .t{background:var(--line);border-radius:4px;height:16px;overflow:hidden;display:flex}
+.row .t i{display:block;height:100%}
+.row em{font-style:normal;text-align:right;font-weight:600}
+.tip{grid-template-columns:190px 1fr 30px}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--mut);margin-bottom:6px;flex-wrap:wrap}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.cell{border-radius:8px;padding:10px;color:#fff;min-height:70px}
+.cell b{display:block;font-size:20px}.cell span{font-size:12px}
+.ctl{display:grid;grid-template-columns:1fr 54px;gap:8px;align-items:center;margin:9px 0;font-size:13px}
+.ctl .t{height:8px;background:var(--line);border-radius:4px;margin-top:4px;overflow:hidden}
+.ctl .t i{display:block;height:100%}
+.ctl em{font-style:normal;font-weight:700;text-align:right}
+.cmp{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 14px;font-size:13px;align-items:center}
+.cmp .h{color:var(--mut);font-size:12px}.cmp .n{font-weight:700;text-align:right}
+.bar{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.bar label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+input,select,button,textarea{font:inherit;font-size:13px;color:var(--ink);background:var(--in);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+input[type=number]{width:70px}body.nosrc .src,body.nosrc .org{display:none}input[type=color]{width:44px;height:30px;padding:2px}.chk{flex-direction:row!important;align-items:center;gap:5px!important}
+button{cursor:pointer;background:var(--inv);color:#fff;border-color:var(--inv)}
+button.g{background:var(--in);color:var(--ink);border-color:var(--line)}
+:focus-visible{outline:2px solid var(--inv);outline-offset:2px}
+textarea{width:100%;min-height:210px;line-height:1.5}
+.src{font-size:11px;font-weight:400;color:var(--mut);margin-top:6px;line-height:1.3}
+.ctl em{line-height:1.25}.ctl{grid-template-columns:1fr 78px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:600}td:nth-child(2){white-space:nowrap}
+.msg{margin:10px 0 0;font-size:13px;color:var(--mut)}.msg.e{color:var(--bad)}
+</style></head>
+<body><main>
+<h1>Auditoría de sanciones</h1>
+<p class="sub" id="sub"></p>
+
+<div class="card" style="margin-bottom:14px">
+ <h2>Cargar una nueva auditoría</h2>
+ <p class="note">Sube el Excel de la semana (hoja con las mismas columnas de siempre). Se procesa en tu navegador; el archivo no se envía a ningún servidor.</p>
+ <div class="bar">
+  <label>Excel de la auditoría<input type="file" id="f1" accept=".xlsx,.xls"></label>
+  <label>Hoja<select id="sh"></select></label>
+  <label>Excel anterior (opcional, para comparar)<input type="file" id="f2" accept=".xlsx,.xls"></label>
+  <button id="sv" class="g">Guardar este corte como referencia</button>
+  <button id="ex">Exportar dashboard a Excel</button>
+ </div>
+ <div class="bar" style="margin-top:12px">
+  <label>Semáforo verde (%)<input type="number" id="g" min="0" max="100"></label>
+  <label>Semáforo ámbar (%)<input type="number" id="a" min="0" max="100"></label>
+  <label>Mostrar porcentajes<select id="mode"><option value="np">Número + %</option><option value="n">Solo número</option></select></label>
+ </div>
+ <p class="msg" id="msg"></p>
+</div>
+
+<details class="card" id="pz" style="margin-bottom:14px"><summary style="cursor:pointer;font-weight:700">Personalizar dashboard</summary>
+<div class="bar" style="margin-top:12px" id="pz1"></div><div class="bar" style="margin-top:12px" id="pz2"></div><div class="bar" style="margin-top:12px" id="pz3"></div>
+<p class="note" style="margin-top:10px">Los cambios se guardan en este navegador. El Excel exportado usa los mismos colores, secciones, tema y porcentajes.</p></details>
+<div class="grid kpis" id="kpis"></div>
+<div class="grid two">
+ <div class="card"><h2>Casos por campus</h2><p class="note">Barra completa = total del campus. <span class="org">Origen: Campus + Estado_Caso.</span></p>
+  <div class="leg"><span><i style="background:var(--inv)"></i>En investigación</span><span><i style="background:var(--san)"></i>Sancionado</span></div><div id="campus"></div></div>
+ <div class="card"><h2>Casos con observación por campus</h2><p class="note">Fechas del CRM que no coinciden con los documentos. Color según % del campus: rojo ≥<b id="nhr">85</b>%, ámbar ≥<b id="nha">50</b>%. <span class="org">Origen: Campus + OBSERVACIONES.</span></p><div class="heat" id="heat"></div></div>
+</div>
+<div class="grid two">
+ <div class="card"><h2>Tipologías</h2><p class="note">Todos los casos, por criticidad. <span class="org">Origen: Tipología del caso + Tipo de infracción (Criticidad).</span></p>
+  <div class="leg"><span><i style="background:var(--bad)"></i>Muy grave</span><span><i style="background:var(--warn)"></i>Grave</span><span><i style="background:var(--san)"></i>Leve</span></div><div id="tipo"></div></div>
+ <div class="card"><h2>Calidad del registro</h2><p class="note" id="qn"></p><div id="ctl"></div></div>
+</div>
+<div class="grid two">
+ <div class="card"><h2>Comparativo con la referencia</h2><p class="note" id="cn"></p><div class="cmp" id="cmp"></div></div>
+ <div class="card"><h2>Texto para el correo</h2><p class="note">Se genera con los datos cargados; revisa la redacción antes de enviar.</p>
+  <textarea id="txt" readonly></textarea><p><button id="cp">Copiar texto</button></p></div>
+</div>
+<div class="card"><h2>Origen de cada dato</h2><p class="note">Las letras entre paréntesis corresponden al formato actual del Excel. La página busca cada columna por su nombre, así que sigue funcionando si cambian de posición. No se leen nombres, códigos de alumno ni descripciones de los casos.</p><table><thead><tr><th>Indicador</th><th>Columna del Excel</th><th>Cómo se calcula</th></tr></thead><tbody><tr><td>Casos registrados</td><td>Campus (I)</td><td>Cuenta las filas que tienen Campus informado.</td></tr><tr><td>Periodo del … al …</td><td>Fecha de registro (B)</td><td>Menor y mayor fecha de los casos cargados.</td></tr><tr><td>En investigación</td><td>Estado_Caso (Q)</td><td>Texto que contiene “investigación”.</td></tr><tr><td>Sancionados</td><td>Estado_Caso (Q)</td><td>Texto igual a “Sancionado”.</td></tr><tr><td>Amonestaciones / suspensiones</td><td>Tipo de Sanción (O)</td><td>Texto que empieza con “Amonestación” o “Suspensión”.</td></tr><tr><td>Tasa de sanción</td><td>Estado_Caso (Q)</td><td>Sancionados ÷ total de casos.</td></tr><tr><td>Con observación / % con observación</td><td>OBSERVACIONES (AK)</td><td>Casos con la celda no vacía ÷ total de casos.</td></tr><tr><td>Mapa de calor por campus</td><td>Campus (I) + OBSERVACIONES (AK)</td><td>Casos con observación de cada campus ÷ casos del campus. Rojo ≥85%, ámbar ≥50%.</td></tr><tr><td>Casos por campus</td><td>Campus (I) + Estado_Caso (Q)</td><td>Casos en investigación y sancionados de cada campus.</td></tr><tr><td>Tipologías y criticidad</td><td>Tipología del caso (N) + Tipo de infracción (Criticidad) (P)</td><td>Casos por tipología, separados en Muy grave, Grave y Leve.</td></tr><tr><td>% Muy Grave (en el correo)</td><td>Tipo de infracción (Criticidad) (P)</td><td>Casos con “Muy Grave” ÷ total.</td></tr><tr><td>Fecha IPI coincide</td><td>1.ª columna VS (F)</td><td>Casos con “Coincide” ÷ total. Compara Fecha IPI CRM (C) con Fecha de IPI REAL (D).</td></tr><tr><td>Canal de recepción informado</td><td>Canal de Recepción de la denuncia (J)</td><td>Casos con la celda no vacía ÷ total.</td></tr><tr><td>Notificación coincide (sancionados)</td><td>2.ª columna VS (AD)</td><td>“Coincide” ÷ sancionados. Compara Fecha de cierre CRM (AB) con REAL (AC).</td></tr><tr><td>Inicio de sanción coincide (sancionados)</td><td>3.ª columna VS (AG)</td><td>“Coincide” ÷ sancionados. Compara fecha de inicio CRM (AE) con REAL (AF).</td></tr><tr><td>Documentación completa (sancionados)</td><td>ESTADO DE DOCUMENTACIÓN (V)</td><td>Texto que contiene “Adjuntó los 3” ÷ sancionados.</td></tr></tbody></table></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+var SAMPLE=[{"reg":20720,"ipiR":20713,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Uso indebido de instalaciones","san":"Amonestación","crit":"Leve","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"Coincide","dias":14,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"},{"reg":20720,"ipiR":20712,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"Amonestación","crit":"Grave","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"Coincide","dias":12.958333333299379,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"},{"reg":20720,"ipiR":20719,"campus":"CHICLAYO","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20720,"ipiR":20719,"campus":"CHICLAYO","canal":"Autoridad UTP","tip":"Consumo de alcohol y/o drogas","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20720,"ipiR":20720,"campus":"SJL","canal":"Autoridad UTP","tip":"Uso indebido de instalaciones","san":"Amonestación","crit":"Leve","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"Coincide","dias":6,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"},{"reg":20720,"ipiR":20710,"campus":"ATE","canal":"Otro","tip":"Uso indebido de instalaciones","san":"","crit":"Leve","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20720,"ipiR":20710,"campus":"ATE","canal":"Otro","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20720,"ipiR":20713,"campus":"ATE","canal":"Otro","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20721,"ipiR":20718,"campus":"LIMA NORTE","canal":"","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20721,"ipiR":20717,"campus":"SJL","canal":"Autoridad UTP","tip":"Uso indebido de instalaciones","san":"Amonestación","crit":"Leve","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"Coincide","dias":10,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"},{"reg":20721,"ipiR":20720,"campus":"LIMA CENTRO","canal":"","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20721,"ipiR":20719,"campus":"CHICLAYO","canal":"Autoridad UTP","tip":"Venta ambulatoria","san":"Amonestación","crit":"Muy Grave","est":"Sancionado","apl":"-","doc":"Adjuntó los 3","vsI":"Coincide","vsC":"No coincide","vsS":"Coincide","dias":6,"obs":"Fecha de CRM vs Notificación"},{"reg":20724,"ipiR":20714,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"Suspensión Temporal","crit":"Muy Grave","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"No coincide","dias":11,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"},{"reg":20724,"ipiR":20721,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Consumo de VAPE","san":"","crit":"Leve","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20724,"ipiR":20721,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20721,"campus":"LIMA SUR","canal":"Autoridad UTP","tip":"Agresión Física","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Leve","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20724,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20721,"campus":"TACNA","canal":"Otro","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20724,"ipiR":20722,"campus":"ICA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"No implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20717,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Plagio Académico","san":"","crit":"Leve","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20724,"campus":"CHICLAYO","canal":"Autoridad UTP","tip":"Consumo de alcohol y/o drogas","san":"","crit":"Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20725,"ipiR":20717,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Plagio Académico","san":"","crit":"Leve","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20705,"campus":"LIMA NORTE","canal":"","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20712,"campus":"LIMA NORTE","canal":"","tip":"Mensajes inapropiados","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20718,"campus":"LIMA NORTE","canal":"","tip":"Mensajes inapropiados","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20718,"campus":"LIMA NORTE","canal":"","tip":"Mensajes inapropiados","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20712,"campus":"LIMA NORTE","canal":"","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20722,"campus":"TACNA","canal":"Otro","tip":"Consumo de alcohol y/o drogas","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20725,"campus":"HUANCAYO","canal":"","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20725,"ipiR":20715,"campus":"ATE","canal":"Otro","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20725,"ipiR":20721,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20721,"campus":"LIMA SUR","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20725,"ipiR":20720,"campus":"PUCALLPA","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20726,"ipiR":20725,"campus":"CHICLAYO","canal":"Defensoría Universitaria","tip":"Mensajes inapropiados","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20726,"ipiR":20724,"campus":"CHICLAYO","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"","doc":"Adjuntó el IPI","vsI":"Coincide","vsC":"","vsS":"","dias":null,"obs":""},{"reg":20726,"ipiR":20722,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20726,"ipiR":20722,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20726,"ipiR":20722,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20726,"ipiR":20726,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20726,"ipiR":20719,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Presunto estado de ebriedad","san":"","crit":"Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20727,"ipiR":20724,"campus":"CHIMBOTE","canal":"Autoridad UTP","tip":"Préstamo de Carnet o código de alumno","san":"","crit":"Muy Grave","est":"En proceso de investigación","apl":"Implementada","doc":"Adjuntó el IPI","vsI":"No Coincide","vsC":"","vsS":"","dias":null,"obs":"Fecha de CRM vs IPI"},{"reg":20727,"ipiR":20724,"campus":"AREQUIPA","canal":"Autoridad UTP","tip":"Uso indebido de instalaciones","san":"Amonestación","crit":"Leve","est":"Sancionado","apl":"Implementada","doc":"Adjuntó los 3","vsI":"No Coincide","vsC":"No coincide","vsS":"Coincide","dias":3,"obs":"Fecha de CRM vs IPI - Notificación - Inicio de sanción"}];
+var $=function(i){return document.getElementById(i)};
+var cfg={umb:3,ant:15,g:95,a:80,mode:"np"},cur=null,prev=null,rows=SAMPLE,wbk=null,label="datos de ejemplo del corte 1-10";
+try{var s=JSON.parse(localStorage.getItem("aud_cfg"));if(s)cfg=s}catch(e){}cfg.mode=cfg.mode||"np";var DF={title:"Auditoría de sanciones",theme:"auto",sort:"t",hr:85,ha:50,c:{},hide:{},hideSrc:false};for(var q in DF)if(cfg[q]==null)cfg[q]=DF[q];
+function norm(s){return String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toLowerCase()}
+function day(v){if(v instanceof Date)return Math.floor((v.getTime()-v.getTimezoneOffset()*60000+60000)/864e5);if(typeof v==="number"&&v>20000&&v<80000)return Math.floor(v-25569);return null}
+function fmt(d){if(d==null)return"";var x=new Date(d*864e5);return("0"+x.getUTCDate()).slice(-2)+"/"+("0"+(x.getUTCMonth()+1)).slice(-2)+"/"+x.getUTCFullYear()}
+function toISO(d){return new Date(d*864e5).toISOString().slice(0,10)}
+function fv(n,d){var s=n+" de "+d;return cfg.mode==="n"?s:s+" ("+Math.round(pct(n,d))+"%)"}
+function pct(a,b){return b?a/b*100:0}
+function p1(x){return(Math.round(x*10)/10).toString().replace(".",",")}
+var KEYS={reg:"fecha de registro",ipiR:"fecha de ipi real",campus:"=campus",canal:"canal de recepcion",tip:"tipologia del caso",san:"tipo de sancion",crit:"tipo de infraccion",est:"estado_caso",apl:"estado de la aplicacion",doc:"estado de documentacion",dias:"dias transcurridos",obs:"observaciones"};
+function parse(aoa){
+ var h=aoa[0].map(norm),ix={},miss=[];
+ Object.keys(KEYS).forEach(function(k){var t=KEYS[k],eq=t[0]==="=";if(eq)t=t.slice(1);var i=h.findIndex(function(x){return eq?x===t:x.indexOf(t)===0});if(i<0)miss.push(t);ix[k]=i});
+ var vs=[];h.forEach(function(x,i){if(x==="vs")vs.push(i)});
+ if(miss.length&&(ix.campus<0||ix.est<0||ix.tip<0))throw new Error("No encontré las columnas: "+miss.join(", "));
+ var out=[];
+ for(var r=1;r<aoa.length;r++){var a=aoa[r];if(!a||a[ix.campus]==null||String(a[ix.campus]).trim()==="")continue;
+  var g=function(k){return ix[k]>=0?a[ix[k]]:null},s=function(k){var v=g(k);return v==null?"":String(v).trim()};
+  out.push({reg:day(g("reg")),ipiR:day(g("ipiR")),campus:s("campus").toUpperCase(),canal:s("canal"),tip:s("tip"),san:s("san"),crit:s("crit"),est:s("est"),apl:s("apl"),doc:s("doc"),
+   vsI:vs[0]!=null?s2(a[vs[0]]):"",vsC:vs[1]!=null?s2(a[vs[1]]):"",vsS:vs[2]!=null?s2(a[vs[2]]):"",dias:typeof g("dias")==="number"?g("dias"):null,obs:s("obs")})}
+ return out}
+function s2(v){return v==null?"":String(v).trim()}
+function calc(R,cut){
+ var k={n:R.length},c=function(f){return R.filter(f).length};
+ var inv=function(r){return norm(r.est).indexOf("investigacion")>=0},sa=function(r){return norm(r.est)==="sancionado"},ok=function(v){return norm(v)==="coincide"};
+ var S=R.filter(sa);
+ k.inv=c(inv);k.sanc=S.length;k.amon=c(function(r){return norm(r.san).indexOf("amonest")===0});k.susp=c(function(r){return norm(r.san).indexOf("suspension")===0});
+ k.obsN=c(function(r){return r.obs!==""});k.pobs=pct(k.obsN,k.n);k.tsanc=pct(k.sanc,k.n);
+ k.mgN=c(function(r){return norm(r.crit)==="muy grave"});k.mg=pct(k.mgN,k.n);
+ k.ipiN=c(function(r){return ok(r.vsI)});k.ipi=pct(k.ipiN,k.n);
+ var rz=R.filter(function(r){return r.reg!=null&&r.ipiR!=null}).map(function(r){return r.reg-r.ipiR});
+ k.rez=rz.length?rz.reduce(function(a,b){return a+b},0)/rz.length:0;
+ k.oporD=rz.length;k.oporN=rz.filter(function(x){return x<=cfg.umb}).length;k.opor=pct(k.oporN,k.oporD);
+ var ag=R.filter(function(r){return inv(r)&&r.ipiR!=null}).map(function(r){return cut-r.ipiR});
+ k.antig=ag.length?ag.reduce(function(a,b){return a+b},0)/ag.length:0;k.viej=ag.filter(function(x){return x>cfg.ant}).length;
+ k.docN=S.filter(function(r){return norm(r.doc).indexOf("los 3")>=0}).length;k.doc=pct(k.docN,k.sanc);
+ k.cierreN=S.filter(function(r){return ok(r.vsC)}).length;k.cierre=pct(k.cierreN,k.sanc);k.inicioN=S.filter(function(r){return ok(r.vsS)}).length;k.inicio=pct(k.inicioN,k.sanc);
+ k.canal=c(function(r){return r.canal===""});
+ var d=S.map(function(r){return r.dias}).filter(function(x){return x!=null});k.dias=d.length?d.reduce(function(a,b){return a+b},0)/d.length:0;
+ var rg=R.map(function(r){return r.reg}).filter(function(x){return x!=null});k.d0=rg.length?Math.min.apply(null,rg):null;k.d1=rg.length?Math.max.apply(null,rg):null;
+ var cm={},tp={};
+ R.forEach(function(r){var m=cm[r.campus]||(cm[r.campus]={n:r.campus,inv:0,san:0,obs:0,t:0});m.t++;if(inv(r))m.inv++;if(sa(r))m.san++;if(r.obs!=="")m.obs++;
+  var t=tp[r.tip]||(tp[r.tip]={n:r.tip,mg:0,gr:0,le:0,t:0,s:0});t.t++;var q=norm(r.crit);if(q==="muy grave")t.mg++;else if(q==="grave")t.gr++;else t.le++;if(sa(r))t.s++});
+ k.cm=Object.keys(cm).map(function(x){return cm[x]}).sort(function(a,b){return b.t-a.t});
+ k.tp=Object.keys(tp).map(function(x){return tp[x]}).sort(function(a,b){return b.t-a.t});
+ return k}
+function topN(arr,f,n){return arr.filter(function(x){return x[f]>0}).sort(function(a,b){return b[f]-a[f]}).slice(0,n)}
+function col(v){return v>=cfg.g?"var(--ok)":v>=cfg.a?"var(--warn)":"var(--bad)"}
+function getQ(k){return [["Fecha IPI coincide (CRM vs real)",k.ipiN,k.n,"1.ª columna VS (Fecha IPI CRM vs Fecha de IPI REAL)"],
+  ["Canal de recepción informado",k.n-k.canal,k.n,"Canal de Recepción de la denuncia (no vacío)"],
+  ["Inicio de sanción coincide (sancionados)",k.inicioN,k.sanc,"3.ª columna VS (Fecha desde cuándo debe aplicarse la sanción)"],
+  ["Notificación coincide (sancionados)",k.cierreN,k.sanc,"2.ª columna VS (Fecha de cierre / notificación)"],
+  ["Documentación completa (sancionados)",k.docN,k.sanc,"ESTADO DE DOCUMENTACIÓN = “Adjuntó los 3”"]]}
+function render(){
+ var cut=cur.d1,np=cfg.mode!=="n";
+ var k=calc(rows,cut);cur=k;sortCm(k);
+ $("sub").textContent="Registros del "+fmt(k.d0)+" al "+fmt(k.d1)+" · "+k.n+" casos · fuente: "+label;
+ var pv=prev,d=function(a,b,inv,u){if(!pv||a==null||b==null)return"";var x=a-b;return'<small class="'+(inv?(x<0?"dn":x>0?"up":""):"")+'">'+(x>0?"▲ ":x<0?"▼ ":"= ")+Math.abs(Math.round(x*10)/10)+(u||"")+" vs referencia</small>"};
+ var pm=function(n,t,s){return np?"<small>"+p1(pct(n,t))+"%"+s+"</small>":""};
+ var K=[["Casos registrados",k.n,d(k.n,pv&&pv.n),"Filas con dato en Campus"],
+  ["En investigación",k.inv,pm(k.inv,k.n," del total"),"Estado_Caso"],
+  ["Sancionados",k.sanc,pm(k.sanc,k.n," (tasa de sanción)"),"Estado_Caso"],
+  ["Con observación de fechas",k.obsN,pm(k.obsN,k.n," del total")+(np?d(k.pobs,pv&&pv.pobs,true," pp"):d(k.obsN,pv&&pv.obsN,true)),"OBSERVACIONES (no vacía)"]];
+ $("kpis").innerHTML=K.map(function(x){return'<div class="card k"><span>'+x[0]+"</span><b>"+x[1]+"</b>"+x[2]+'<div class="src">Origen: '+x[3]+"</div></div>"}).join("");
+ var mx=Math.max.apply(null,k.cm.map(function(x){return x.inv+x.san}).concat([1])),h="";
+ k.cm.forEach(function(r){h+='<div class="row"><span>'+r.n+'</span><div class="t"><i style="width:'+r.inv/mx*100+'%;background:var(--inv)"></i><i style="width:'+r.san/mx*100+'%;background:var(--san)"></i></div><em>'+r.t+"</em></div>"});$("campus").innerHTML=h;
+ h="";k.cm.forEach(function(r){var p=Math.round(pct(r.obs,r.t));h+='<div class="cell" style="background:'+(p>=cfg.hr?"var(--bad)":p>=cfg.ha?"var(--warn)":"var(--ok)")+'"><b>'+(np?p+"%":r.obs)+"</b><span>"+r.n+"<br>"+(np?r.obs+" de "+r.t:"de "+r.t+" casos")+"</span></div>"});$("heat").innerHTML=h;
+ var tm=Math.max.apply(null,k.tp.map(function(x){return x.t}).concat([1]));h="";
+ k.tp.forEach(function(r){h+='<div class="row tip"><span>'+r.n+'</span><div class="t"><i style="width:'+r.mg/tm*100+'%;background:var(--bad)"></i><i style="width:'+r.gr/tm*100+'%;background:var(--warn)"></i><i style="width:'+r.le/tm*100+'%;background:var(--san)"></i></div><em>'+r.t+"</em></div>"});$("tipo").innerHTML=h;
+ $("qn").textContent="Casos conformes sobre casos evaluados (verde ≥"+cfg.g+"%, ámbar ≥"+cfg.a+"%, rojo por debajo; la barra siempre usa el %).";
+ var Q=getQ(k);
+ $("ctl").innerHTML=Q.map(function(r){var p=pct(r[1],r[2]);return'<div class="ctl"><div>'+r[0]+'<div class="t"><i style="width:'+Math.max(p,1)+"%;background:"+col(p)+'"></i></div><div class="src">Origen: '+r[3]+"</div></div><em>"+r[1]+" de "+r[2]+(np?"<br>"+p1(p)+"%":"")+"</em></div>"}).join("");
+ var M=[["Total de casos","n"],["En investigación","inv"],["Sancionados","sanc"],["Con observación","obsN"],["% con observación","pobs",1],["Tasa de sanción","tsanc",1]].filter(function(m){return np||!m[2]});
+ $("cn").textContent=pv?"Referencia: "+(pv.lab||"corte anterior"):"Sin referencia: sube el Excel anterior o guarda un corte con el botón de arriba.";
+ h='<span class="h"></span><span class="h n">Ref.</span><span class="h n">Actual</span><span class="h n">Var.</span>';
+ M.forEach(function(m){var a=pv?pv[m[1]]:null,b=k[m[1]],f=function(x){return m[2]?p1(x)+"%":x};h+="<span>"+m[0]+'</span><span class="n">'+(a==null?"–":f(a))+'</span><span class="n">'+f(b)+'</span><span class="n">'+(a==null?"–":(b-a>0?"+":"")+(m[2]?p1(b-a)+" pp":Math.round((b-a)*10)/10))+"</span>"});$("cmp").innerHTML=h;
+ var ci=topN(k.cm,"inv",2),cs=topN(k.cm,"san",2),ts=topN(k.tp,"s",1)[0],ta=k.tp[0],L=function(a){return a.map(function(x){return x.n}).join(" y ")},P=function(n,t){return np?" ("+Math.round(pct(n,t))+"%)":""};
+ var t="Buenas tardes,\n\nSe realizó la auditoría de las sanciones registradas del "+fmt(k.d0)+" al "+fmt(k.d1)+", en el marco de la implementación de los nuevos campos. Durante el periodo evaluado, se registraron "+k.n+" casos en total"+(pv?" ("+(k.n>=pv.n?"+":"")+(k.n-pv.n)+" respecto a la referencia, que registró "+pv.n+")":"")+".\n\n";
+ t+="• En proceso de investigación ("+k.inv+" casos"+(np?", "+Math.round(pct(k.inv,k.n))+"% del total":"")+"): expedientes en etapa de validación de la infracción y definición de la medida correctiva. Se concentran principalmente en "+(L(ci)||"—")+".\n";
+ t+="• Sancionados ("+k.sanc+" casos): "+k.amon+" amonestación(es) y "+k.susp+" suspensión(es) temporal(es)"+(cs.length?", principalmente en "+L(cs):"")+".\n\n";
+ t+=(ts?"En el análisis por tipología, la conducta más recurrente entre los casos con sanción aplicada es “"+ts.n+"”, con "+ts.s+" casos. ":"")+"Considerando todos los casos, la mayor frecuencia corresponde a “"+ta.n+"” ("+ta.t+" casos"+(np?", "+Math.round(pct(ta.t,k.n))+"%":"")+"); "+k.mgN+" casos"+P(k.mgN,k.n)+" son de criticidad Muy Grave.\n\n";
+ t+="Hallazgos:\n• "+k.obsN+" registros"+P(k.obsN,k.n)+" donde la información del campus en el CRM no coincide con las fechas de los documentos adjuntados.\n• Coincidencia de la fecha IPI: "+fv(k.ipiN,k.n)+".\n• En sancionados: notificación coincide en "+fv(k.cierreN,k.sanc)+", inicio de sanción en "+fv(k.inicioN,k.sanc)+", documentación completa en "+fv(k.docN,k.sanc)+".\n";
+ if(k.canal)t+="• "+k.canal+" caso(s) sin canal de recepción informado.\n";
+ $("txt").value=t}
+
+function exportXlsx(){
+ if(!cur||typeof ExcelJS==="undefined"){msg("No se pudo cargar el generador de Excel (revisa tu conexión).",1);return}
+ var k=cur,pv=prev,np=cfg.mode!=="n",D=isDark(),C=pal(),
+ T=D?{bg:"0E1522",cd:"17202F",ink:"E8EDF6",mut:"9AA6BB",ln:"2A3548"}:{bg:"EEF1F5",cd:"FFFFFF",ink:"14213D",mut:"5B6679",ln:"D9DEE7"},
+ H=function(x){return{argb:"FF"+String(x).replace("#","").toUpperCase()}},
+ wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Dashboard",{views:[{showGridLines:false}],pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0}}),r=1,
+ SP=[[2,2],[3,10],[11,18],[19,26]],TS=[[2,2],[4,10],[12,18],[20,26]],
+ fl=function(c,x){c.fill={type:"pattern",pattern:"solid",fgColor:H(x)}},
+ nx=function(h){var x=ws.getRow(r);if(h)x.height=h;for(var c=2;c<=27;c++)fl(ws.getCell(r,c),T.cd);return r++},
+ put=function(rr,c1,c2,v,o){o=o||{};var h=o.h||1;if(c2>c1||h>1)ws.mergeCells(rr,c1,rr+h-1,c2);var c=ws.getCell(rr,c1);c.value=v;if(o.bg)fl(c,o.bg);c.font={name:"Segoe UI",size:o.sz||10,bold:!!o.b,color:H(o.col||T.ink)};c.alignment={vertical:"middle",horizontal:o.al||"left",wrapText:!!o.w,indent:o.ind||0};return c},
+ sec=function(t,n){if(cfg.hideSrc)n=n.replace(/\s*Origen:.*$/,"");r++;put(nx(24),2,27,t,{b:1,sz:13,ind:1});put(nx(30),2,27,n,{sz:9,col:T.mut,w:1,ind:1})},
+ leg=function(L){put(nx(18),3,26,{richText:L.map(function(x){return[{text:"■ ",font:{color:H(x[1]),size:10}},{text:x[0]+"     ",font:{color:H(T.mut),size:9}}]}).reduce(function(a,b){return a.concat(b)},[])})},
+ bar=function(rr,sg,mx,tr){var c;if(tr)for(c=3;c<=26;c++)fl(ws.getCell(rr,c),T.ln);c=3;sg.forEach(function(s){if(s[0]<=0)return;var n=Math.max(1,Math.round(s[0]/mx*24));for(var j=0;j<n&&c<=26;j++,c++)fl(ws.getCell(rr,c),s[1])})},
+ fx=function(n,d){return n+" de "+d+(np?" ("+Math.round(pct(n,d))+"%)":"")},H0=cfg.hide;
+ put(2,2,27,cfg.title,{b:1,sz:20,bg:T.bg});put(3,2,27,$("sub").textContent,{sz:10,col:T.mut,bg:T.bg});r=5;
+ if(!H0.kpis){var K=[["Casos registrados",k.n,"",T.ink],["En investigación",k.inv,np?p1(pct(k.inv,k.n))+"% del total":"",C.inv],["Sancionados",k.sanc,np?p1(pct(k.sanc,k.n))+"% (tasa de sanción)":"",C.san],["Con observación de fechas",k.obsN,np?p1(pct(k.obsN,k.n))+"% del total":"",C.bad]],a=r;nx(18);nx(36);nx(18);
+  K.forEach(function(x,i){put(a,SP[i][0],SP[i][1],x[0],{sz:9,col:T.mut,ind:1});put(a+1,SP[i][0],SP[i][1],x[1],{sz:24,b:1,col:x[3],al:"left",ind:1});put(a+2,SP[i][0],SP[i][1],x[2],{sz:9,col:T.mut,ind:1})})}
+ if(!H0.campus){sec("Casos por campus","Barra completa = total del campus. Origen: Campus + Estado_Caso.");leg([["En investigación",C.inv],["Sancionado",C.san]]);
+  var mx=Math.max.apply(null,k.cm.map(function(x){return x.inv+x.san}).concat([1]));
+  k.cm.forEach(function(m){var rr=nx(18);put(rr,2,2,m.n,{ind:1});bar(rr,[[m.inv,C.inv],[m.san,C.san]],mx,1);put(rr,27,27,m.t,{b:1,al:"right"})})}
+ if(!H0.heat){sec("Casos con observación por campus","Fechas del CRM que no coinciden con los documentos. Rojo ≥"+cfg.hr+"%, ámbar ≥"+cfg.ha+"%. Origen: Campus + OBSERVACIONES.");
+  for(var i=0;i<k.cm.length;i+=4){var t0=r;nx(20);nx(20);nx(20);nx(6);
+   k.cm.slice(i,i+4).forEach(function(m,j){var p=Math.round(pct(m.obs,m.t));put(t0,TS[j][0],TS[j][1],(np?p+"%":m.obs)+"\n"+m.n+"\n"+(np?m.obs+" de "+m.t:"de "+m.t+" casos"),{h:3,bg:p>=cfg.hr?C.bad:p>=cfg.ha?C.warn:C.ok,col:"FFFFFF",b:1,sz:10,w:1,al:"center"})})}}
+ if(!H0.tipo){sec("Tipologías","Todos los casos, por criticidad. Origen: Tipología del caso + Tipo de infracción (Criticidad).");leg([["Muy grave",C.bad],["Grave",C.warn],["Leve",C.san]]);
+  var tm=Math.max.apply(null,k.tp.map(function(x){return x.t}).concat([1]));
+  k.tp.forEach(function(m){var rr=nx(18);put(rr,2,2,m.n,{ind:1});bar(rr,[[m.mg,C.bad],[m.gr,C.warn],[m.le,C.san]],tm,1);put(rr,27,27,m.t,{b:1,al:"right"})})}
+ if(!H0.ctl){sec("Calidad del registro","Casos conformes sobre casos evaluados (verde ≥"+cfg.g+"%, ámbar ≥"+cfg.a+"%, rojo por debajo).");
+  getQ(k).forEach(function(q){var p=pct(q[1],q[2]),rr=nx(20);put(rr,2,2,q[0],{ind:1,sz:9});bar(rr,[[p,p>=cfg.g?C.ok:p>=cfg.a?C.warn:C.bad]],100,1);put(rr,27,27,fx(q[1],q[2]),{b:1,al:"right",sz:9})})}
+ if(!H0.cmp){sec("Comparativo con la referencia",pv?"Referencia: "+(pv.lab||"corte anterior"):"Sin referencia cargada.");var rr=nx(18);["Ref.","Actual","Var."].forEach(function(h,i){put(rr,SP[i+1][0],SP[i+1][1],h,{b:1,col:T.mut,al:"right",sz:9})});
+  [["Total de casos","n"],["En investigación","inv"],["Sancionados","sanc"],["Con observación","obsN"],["% con observación","pobs",1],["Tasa de sanción","tsanc",1]].filter(function(m){return np||!m[2]}).forEach(function(m){var a=pv?pv[m[1]]:null,b=k[m[1]],f=function(x){return m[2]?p1(x)+"%":x},rr=nx(18);
+   put(rr,2,2,m[0],{ind:1});put(rr,3,10,a==null?"–":f(a),{al:"right"});put(rr,11,18,f(b),{al:"right",b:1});put(rr,19,26,a==null?"–":(b-a>0?"+":"")+(m[2]?p1(b-a)+" pp":Math.round((b-a)*10)/10),{al:"right",col:a==null?T.mut:(b-a>0?C.bad:C.ok)})})}
+ for(var i=1;i<=r+1;i++)for(var c=1;c<=27;c++){var x=ws.getCell(i,c);if(!x.fill&&!(x.isMerged&&x.master!==x))fl(x,T.bg)}
+ ws.getColumn(1).width=2;ws.getColumn(2).width=40;for(var c=3;c<=26;c++)ws.getColumn(c).width=2.7;ws.getColumn(27).width=18;
+ var w2=wb.addWorksheet("Texto del correo");w2.getColumn(1).width=130;$("txt").value.split("\n").forEach(function(l){var c=w2.addRow([l]).getCell(1);c.alignment={wrapText:true,vertical:"top"}});
+ var w3=wb.addWorksheet("Origen de datos");[38,50,80].forEach(function(w,i){w3.getColumn(i+1).width=w});
+ Array.prototype.forEach.call(document.querySelectorAll("table tr"),function(tr,i){var q=w3.addRow(Array.prototype.map.call(tr.children,function(c){return c.textContent}));q.alignment={wrapText:true,vertical:"top"};if(!i)q.eachCell(function(c){c.font={bold:true,color:{argb:"FFFFFFFF"}};fl(c,C.inv.replace("#",""))})});
+ if(cfg.hideSrc||H0.org)wb.removeWorksheet(w3.id);var fn="Dashboard_Auditoria_Sanciones_"+toISO(k.d1)+".xlsx";
+ wb.xlsx.writeBuffer().then(function(b){var u=new Uint8Array(b),cl=window.claude&&window.claude.use?window.claude.use("downloads"):null;
+  return Promise.resolve(cl).then(function(dl){if(dl)return dl.save({filename:fn,data:u});var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([u],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=fn;document.body.appendChild(a);a.click();a.remove()})})
+ .then(function(){msg("Excel exportado: "+fn)}).catch(function(e){msg(e&&e.code==="declined"?"Exportación cancelada.":"No se pudo exportar: "+(e&&e.message||e),e&&e.code!=="declined")})
+}
+
+function msg(t,e){$("msg").textContent=t;$("msg").className="msg"+(e?" e":"")}
+function loadSheet(){try{var ws=wbk.Sheets[$("sh").value];rows=parse(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null}));if(!rows.length)throw new Error("La hoja no tiene casos.");
+ var rg=rows.map(function(r){return r.reg}).filter(function(x){return x!=null});
+ msg("Cargados "+rows.length+" casos de la hoja “"+$("sh").value+"”.");render()}catch(e){msg(e.message,1)}}
+function readFile(file,cb){if(typeof XLSX==="undefined"){msg("No se pudo cargar el lector de Excel (revisa tu conexión).",1);return}
+ var fr=new FileReader();fr.onload=function(){try{cb(XLSX.read(new Uint8Array(fr.result),{type:"array",cellDates:true}),file.name)}catch(e){msg("No pude leer ese archivo: "+e.message,1)}};fr.readAsArrayBuffer(file)}
+function pickSheet(w){var n=w.SheetNames,m=n.filter(function(x){var y=norm(x);return y.indexOf("auditor")>=0&&y.indexOf("resumen")<0});return{all:n,pre:m.length?m[m.length-1]:n[0]}}
+$("f1").onchange=function(e){var f=e.target.files[0];if(!f)return;readFile(f,function(w,name){wbk=w;var p=pickSheet(w);$("sh").innerHTML=p.all.map(function(x){return"<option"+(x===p.pre?" selected":"")+">"+x+"</option>"}).join("");label=name;loadSheet()})};
+$("sh").onchange=function(){if(wbk)loadSheet()};
+$("f2").onchange=function(e){var f=e.target.files[0];if(!f)return;readFile(f,function(w){try{var p=pickSheet(w),R=parse(XLSX.utils.sheet_to_json(w.Sheets[p.pre],{header:1,raw:true,defval:null})),rg=R.map(function(r){return r.reg}).filter(function(x){return x!=null}),k=calc(R,Math.max.apply(null,rg));k.lab="archivo "+f.name+" ("+fmt(k.d0)+" al "+fmt(k.d1)+")";prev=k;render()}catch(x){msg(x.message,1)}})};
+$("sv").onclick=function(){try{cur.lab="corte guardado ("+fmt(cur.d0)+" al "+fmt(cur.d1)+")";var o={};for(var i in cur)if(i!=="cm"&&i!=="tp")o[i]=cur[i];localStorage.setItem("aud_ref",JSON.stringify(o));prev=o;msg("Corte guardado como referencia en este navegador.");render()}catch(e){msg("No se pudo guardar en este navegador.",1)}};
+["g","a"].forEach(function(i){$(i).value=cfg[i];$(i).onchange=function(){cfg[i]=+$(i).value;try{localStorage.setItem("aud_cfg",JSON.stringify(cfg))}catch(e){}render()}});
+$("mode").value=cfg.mode;$("mode").onchange=function(){cfg.mode=$("mode").value;try{localStorage.setItem("aud_cfg",JSON.stringify(cfg))}catch(e){}render()};
+$("ex").onclick=exportXlsx;
+
+$("cp").onclick=function(){$("txt").select();try{navigator.clipboard.writeText($("txt").value)}catch(e){document.execCommand("copy")}$("cp").textContent="Copiado"; setTimeout(function(){$("cp").textContent="Copiar texto"},1500)};
+try{var r0=JSON.parse(localStorage.getItem("aud_ref"));if(r0)prev=r0}catch(e){}
+(function(){var rg=rows.map(function(r){return r.reg}).filter(function(x){return x!=null});cur={d1:Math.max.apply(null,rg)};render();msg("Mostrando datos de ejemplo del corte 1-10. Sube tu Excel para actualizar.")})();
+var PL=[["inv","En investigación","#3a5a98"],["san","Sancionado / Leve","#1f9d8a"],["bad","Muy grave / rojo","#d64545"],["warn","Grave / ámbar","#e0a21b"],["ok","Verde (semáforo)","#1f9d8a"]],
+SEC=[["kpis","Indicadores",function(){return $("kpis")}],["campus","Casos por campus",function(){return $("campus").parentNode}],["heat","Mapa de calor",function(){return $("heat").parentNode}],["tipo","Tipologías",function(){return $("tipo").parentNode}],["ctl","Calidad del registro",function(){return $("ctl").parentNode}],["cmp","Comparativo",function(){return $("cmp").parentNode}],["txt","Texto para el correo",function(){return $("txt").parentNode}],["org","Origen de cada dato",function(){return document.querySelector("table").parentNode}]];
+function saveCfg(){try{localStorage.setItem("aud_cfg",JSON.stringify(cfg))}catch(e){}}
+function isDark(){return cfg.theme==="dark"||(cfg.theme==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)}
+function pal(){var o={};PL.forEach(function(p){o[p[0]]=cfg.c[p[0]]||p[2]});return o}
+function sortCm(k){var f=cfg.sort;if(f==="a")k.cm.sort(function(a,b){return a.n<b.n?-1:1});else if(f==="o")k.cm.sort(function(a,b){return b.obs/b.t-a.obs/a.t});else k.cm.sort(function(a,b){return b.t-a.t})}
+function applyCfg(){var d=document.documentElement;document.body.classList.toggle("nosrc",!!cfg.hideSrc);$("sub").previousElementSibling.textContent=cfg.title;document.title=cfg.title;
+ if(cfg.theme==="auto")d.removeAttribute("data-theme");else d.setAttribute("data-theme",cfg.theme);
+ PL.forEach(function(p){if(cfg.c[p[0]])d.style.setProperty("--"+p[0],cfg.c[p[0]]);else d.style.removeProperty("--"+p[0])});
+ SEC.forEach(function(s){s[2]().style.display=cfg.hide[s[0]]?"none":""});$("nhr").textContent=cfg.hr;$("nha").textContent=cfg.ha}
+function lab(t,el,cls){var l=document.createElement("label");if(cls)l.className=cls;l.appendChild(document.createTextNode(t));l.appendChild(el);return l}
+function mk(tag,html){var e=document.createElement(tag);if(html)e.innerHTML=html;return e}
+function chg(){saveCfg();applyCfg();render()}
+function buildPanel(){var P1=$("pz1"),P2=$("pz2"),P3=$("pz3");P1.innerHTML=P2.innerHTML=P3.innerHTML="";
+ var t=mk("input");t.type="text";t.value=cfg.title;t.style.width="230px";t.oninput=function(){cfg.title=t.value;chg()};P1.appendChild(lab("Título",t));
+ var th=mk("select",'<option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option>');th.value=cfg.theme;th.onchange=function(){cfg.theme=th.value;chg()};P1.appendChild(lab("Tema (también del Excel)",th));
+ var so=mk("select",'<option value="t">Más casos primero</option><option value="o">Mayor % con observación</option><option value="a">Alfabético</option>');so.value=cfg.sort;so.onchange=function(){cfg.sort=so.value;chg()};P1.appendChild(lab("Orden de campus",so));
+ [["hr","Mapa de calor: rojo desde (%)"],["ha","Mapa de calor: ámbar desde (%)"]].forEach(function(x){var n=mk("input");n.type="number";n.min=0;n.max=100;n.value=cfg[x[0]];n.onchange=function(){cfg[x[0]]=+n.value;chg()};P1.appendChild(lab(x[1],n))});
+ PL.forEach(function(p){var c=mk("input");c.type="color";c.value=cfg.c[p[0]]||p[2];c.oninput=function(){cfg.c[p[0]]=c.value;chg()};P2.appendChild(lab(p[1],c))});
+ SEC.forEach(function(s){var c=mk("input");c.type="checkbox";c.checked=!cfg.hide[s[0]];c.onchange=function(){if(c.checked)delete cfg.hide[s[0]];else cfg.hide[s[0]]=1;chg()};P3.appendChild(lab(s[1],c,"chk"))});
+ var o=mk("input");o.type="checkbox";o.checked=!cfg.hideSrc;o.onchange=function(){cfg.hideSrc=!o.checked;chg()};P3.appendChild(lab("Mostrar origen de cada dato",o,"chk"));var b=mk("button","Restablecer diseño");b.className="g";b.onclick=function(){["title","theme","sort","hr","ha","hideSrc"].forEach(function(k){cfg[k]=DF[k]});cfg.c={};cfg.hide={};saveCfg();applyCfg();buildPanel();render()};P3.appendChild(b)}
+applyCfg();buildPanel();render();
+
+</script></body></html>
